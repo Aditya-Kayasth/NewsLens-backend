@@ -1,0 +1,20 @@
+Flask==3.0.0
+flask-cors==4.0.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Authentication & Security
+PyJWT==2.8.0
+bcrypt==4.1.2
+
+# HTTP Requests
+requests==2.31.0
+
+# Web Scraping
+beautifulsoup4==4.12.2
+lxml
+
+# NLP & Text Processing
+textblob==0.17.1
+nltk==3.8.1

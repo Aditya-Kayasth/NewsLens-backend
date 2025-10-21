@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "name": "Aditya Kayasth",
+      "email": "adityakayasth@gmail.com",
+      "password": "$2b$12$qsqmZz1UUJ/wKyCwmQTfsedzruu3UlCBvjeBvPaSjMSULBfodkRri",
+      "location": "India",
+      "preferred_domains": [
+        "Technology",
+        "Science",
+        "Music"
+      ]
+    },
+    {
+      "name": "Om Amrut",
+      "email": "XZY@gmail.com",
+      "password": "$2b$12$cMxxh3DQY7vc8fCufa6SuetIN.azA8hdxs4owGYJsnGnBmygXBqQ6",
+      "location": "india",
+      "preferred_domains": [
+        "Travel",
+        "Sports",
+        "Entertainment"
+      ]
+    },
+    {
+      "name": "Sai",
+      "email": "sairam@gmail.com",
+      "password": "$2b$12$WUh/ti7BxFJ62xU7o9yL4.CVkjxgnk92Kkxkcwm4aGE8.gTsYiti2",
+      "location": "Paris",
+      "preferred_domains": [
+        "Science",
+        "Sports",
+        "World",
+        "Technology",
+        "Music"
+      ]
+    }
+  ]
+}
