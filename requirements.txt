@@ -18,3 +18,4 @@ lxml
 # NLP & Text Processing
 textblob==0.17.1
 nltk==3.8.1
+gunicorn==21.2.0
