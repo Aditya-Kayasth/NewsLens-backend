@@ -250,23 +250,36 @@ def fetch_top_headlines():
     if request.method == "OPTIONS":
         return jsonify({"message": "CORS preflight"}), 200
     
-    data = request.get_json()
+    data = request.get_json() if request.get_json() else {}
     page = data.get("page", 1)
+    country = data.get("country", "us")
+    category = data.get("category")
     
     params = {
-        'country': 'us',
+        'country': country,
         'pageSize': 20,
         'page': page,
         'apiKey': NEWSAPI_KEY
     }
     
+    if category:
+        params['category'] = category
+    
     try:
         api_response = top_headlines(params)
+        
         if api_response.get('status') != 'ok':
-            return jsonify({"error": "Failed to fetch headlines"}), 500
+            error_msg = api_response.get('message', 'Unknown error')
+            app.logger.error(f"NewsAPI error: {error_msg}")
+            return jsonify({
+                "error": "Failed to fetch headlines",
+                "details": error_msg
+            }), 500
         
         api_response = fetch_full_content(api_response)
         api_response = analyze_sentiments(api_response)
+        
+        # Filter articles with content and images
         api_response['articles'] = [
             a for a in api_response.get('articles', []) 
             if a.get('content') and a.get('urlToImage')
@@ -280,7 +293,7 @@ def fetch_top_headlines():
         
     except Exception as e:
         app.logger.error(f"Fetch headlines error: {str(e)}")
-        return jsonify({"error": "Error fetching headlines"}), 500
+        return jsonify({"error": f"Error fetching headlines: {str(e)}"}), 500
 
 @app.route("/search", methods=["POST", "OPTIONS"])
 def search():
