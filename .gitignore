@@ -39,8 +39,13 @@ env/
 # Cache
 data/cache/
 *.log
+logs/
 
-# Audio files (if you had read-aloud)
+# REMOVED - Now using database
+data/users.json
+data/summary.json
+
+# Audio files
 static/audio/
 
 # OS

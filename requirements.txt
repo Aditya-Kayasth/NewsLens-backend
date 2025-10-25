@@ -9,6 +9,7 @@ python-dotenv==1.0.0
 # --- Authentication & Security ---
 PyJWT==2.8.0
 bcrypt==4.1.2
+Flask-Limiter==3.5.0
 
 # --- HTTP Requests ---
 requests==2.31.0
@@ -22,6 +23,6 @@ textblob==0.17.1
 nltk==3.8.1
 
 # --- Database & Caching ---
-Flask-SQLAlchemy==3.1.1    # Flask ORM for databases
-psycopg2-binary==2.9.9     # PostgreSQL driver
-redis==5.0.1               # Redis client
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary>=2.9.9
+redis==5.0.1
