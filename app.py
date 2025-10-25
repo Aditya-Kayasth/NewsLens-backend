@@ -245,27 +245,40 @@ def fetch_news(current_user):
         app.logger.error(f"Fetch news error: {str(e)}")
         return jsonify({"error": "Error fetching news"}), 500
 
-@app.route("/top-headlines", methods=["POST", "OPTIONS"])
+@app.route("/top-headlines", methods=["POST", "OPTIONS", "GET"])
 def fetch_top_headlines():
     if request.method == "OPTIONS":
         return jsonify({"message": "CORS preflight"}), 200
     
-    data = request.get_json() if request.get_json() else {}
-    page = data.get("page", 1)
-    country = data.get("country", "us")
+    # Handle both POST with JSON and GET requests
+    if request.method == "POST":
+        if request.is_json:
+            data = request.get_json()
+        else:
+            # Handle form data or empty body
+            data = {}
+    elif request.method == "GET":
+        data = request.args.to_dict()
+    else:
+        data = {}
+    
+    page = int(data.get("page", 1))
     category = data.get("category")
     
+    # Per NewsAPI docs: for free tier, don't include country parameter
+    # It defaults to US top headlines
     params = {
-        'country': country,
         'pageSize': 20,
         'page': page,
         'apiKey': NEWSAPI_KEY
     }
     
-    if category:
+    # Only add category if specified (must be one of: business, entertainment, general, health, science, sports, technology)
+    if category and category in ['business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology']:
         params['category'] = category
     
     try:
+        app.logger.info(f"Fetching top headlines with params: {params}")
         api_response = top_headlines(params)
         
         if api_response.get('status') != 'ok':
@@ -276,23 +289,29 @@ def fetch_top_headlines():
                 "details": error_msg
             }), 500
         
+        app.logger.info(f"Got {len(api_response.get('articles', []))} articles from NewsAPI")
+        
         api_response = fetch_full_content(api_response)
         api_response = analyze_sentiments(api_response)
         
         # Filter articles with content and images
-        api_response['articles'] = [
+        filtered_articles = [
             a for a in api_response.get('articles', []) 
             if a.get('content') and a.get('urlToImage')
         ]
         
+        app.logger.info(f"After filtering: {len(filtered_articles)} articles with content and images")
+        
         return jsonify({
-            "articles": api_response.get('articles', []),
+            "articles": filtered_articles,
             "totalResults": api_response.get('totalResults', 0),
             "page": page
         }), 200
         
     except Exception as e:
         app.logger.error(f"Fetch headlines error: {str(e)}")
+        import traceback
+        app.logger.error(traceback.format_exc())
         return jsonify({"error": f"Error fetching headlines: {str(e)}"}), 500
 
 @app.route("/search", methods=["POST", "OPTIONS"])
