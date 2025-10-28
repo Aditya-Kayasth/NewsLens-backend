@@ -210,7 +210,7 @@ def mmr_summarizer(docs, query=None, lambda_param=0.5, summary_length=6, info=No
         if not mmr_scores:
             break # No more candidates to score
             
-        best_mmr, best_idx = max(mmD_scores)
+        best_mmr, best_idx = max(mmr_scores)
         
         # Add to summary and remove from candidates
         selected_indices.append(best_idx)
