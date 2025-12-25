@@ -1,9 +1,7 @@
-# Load environment variables
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -12,36 +10,26 @@ import jwt
 import bcrypt
 import nltk
 
-
-# Import modules
 from modules.news_api import get_articles, top_headlines
 from modules.content import fetch_full_content
 from modules.sentiment import analyze_sentiments
-from modules.summarizer import related_articles_content, mmr_summarizer
+from modules.summarizer import related_articles_content, gemini_summarizer
 
-# --- NEW IMPORTS ---
 from models import db, User
-from cache import r  # Import redis client to test connection
+from cache import r
 
-
-
-# Download NLTK data
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# --- DATABASE CONFIG ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL not found in environment variables!")
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
-# --- END DB CONFIG ---
 
-# Configure CORS
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 CORS(app, resources={
     r"/*": {
@@ -51,17 +39,11 @@ CORS(app, resources={
     }
 })
 
-# Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your_secret_key_here")
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 
 if not NEWSAPI_KEY:
     raise ValueError("NEWSAPI_KEY not found in environment variables!")
-
-# --- REMOVED HELPER FUNCTIONS (load_users, save_users) ---
-# The database handles this now.
-
-# ==================== AUTHENTICATION ROUTES ====================
 
 @app.route("/signup", methods=["POST", "OPTIONS"])
 def signup():
@@ -71,23 +53,20 @@ def signup():
     if not all(k in data for k in ("name", "email", "password", "location")):
         return jsonify({"error": "Missing required fields"}), 400
     
-    # Check if user already exists
     existing_user = User.query.filter_by(email=data["email"]).first()
     if existing_user:
         return jsonify({"error": "User already exists"}), 400
     
     hashed_pw = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
     
-    # Create new user
     new_user = User(
         name=data["name"],
         email=data["email"],
         password=hashed_pw,
         location=data["location"],
-        preferred_domains=[]  # Start with empty preferences
+        preferred_domains=[]
     )
     
-    # Add to database
     try:
         db.session.add(new_user)
         db.session.commit()
@@ -107,22 +86,18 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password required"}), 400
     
-    # Find user in database
     user = User.query.filter_by(email=email).first()
     
     if not user or not bcrypt.checkpw(password.encode(), user.password.encode()):
         return jsonify({"error": "Invalid credentials"}), 401
     
-    token = jwt.encode( {"email": email, "exp": datetime.utcnow() + timedelta(hours=24)}, SECRET_KEY, algorithm="HS256" )
+    token = jwt.encode({"email": email, "exp": datetime.utcnow() + timedelta(hours=24)}, SECRET_KEY, algorithm="HS256")
     
-    # Return user data from database object
-    return jsonify({ 
-        "token": token, 
-        "redirect": "/news-home", 
-        "user": user.as_dict()  # Use the helper function
+    return jsonify({
+        "token": token,
+        "redirect": "/news-home",
+        "user": user.as_dict()
     }), 200
-
-# ==================== PREFERENCES ROUTES ====================
 
 @app.route("/update_preferences", methods=["POST", "OPTIONS"])
 def update_preferences():
@@ -159,9 +134,6 @@ def get_preferences():
         
     return jsonify({"preferred_domains": user.preferred_domains or []}), 200
 
-
-# ==================== NEWS ROUTES ====================
-
 @app.route("/news", methods=["POST", "OPTIONS"])
 def fetch_news():
     if request.method == "OPTIONS":
@@ -180,10 +152,12 @@ def fetch_news():
         query = category
     else:
         user = User.query.filter_by(email=email).first()
-        if not user: return jsonify({"error": "User not found"}), 404
+        if not user:
+            return jsonify({"error": "User not found"}), 404
         
         topics = user.preferred_domains
-        if not topics: return jsonify({"error": "Please select topics in preferences"}), 400
+        if not topics:
+            return jsonify({"error": "Please select topics in preferences"}), 400
         query = ' OR '.join(topics)
 
     from_date = (datetime.utcnow() - timedelta(days=3)).strftime('%Y-%m-%d')
@@ -202,9 +176,6 @@ def fetch_news():
     
     except Exception as e:
         return jsonify({"error": f"Error fetching news: {str(e)}"}), 500
-
-# ==================== OTHER ROUTES ====================
-# (Search, Summarize, Health, etc. remain unchanged)
 
 @app.route("/search", methods=["POST", "OPTIONS"])
 def search():
@@ -231,7 +202,6 @@ def search():
     except Exception as e:
         return jsonify({"error": f"Search error: {str(e)}"}), 500
 
-
 @app.route("/summarize", methods=["POST", "OPTIONS"])
 def summarize():
     if request.method == "OPTIONS":
@@ -244,14 +214,13 @@ def summarize():
         docs, query, info = related_articles_content(article_url, NEWSAPI_KEY)
         if not docs:
             return jsonify({"error": "Could not retrieve content for summarization"}), 404
-        summary = mmr_summarizer(docs, query=query, summary_length=5, info=info)
+        summary = gemini_summarizer(docs, info=info)
         return summary
     except Exception as e:
         return jsonify({"error": f"Summarization failed: {str(e)}"}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
-    # Let's test our new connections
     db_status = "disconnected"
     redis_status = "disconnected"
     
@@ -268,7 +237,7 @@ def health():
         redis_status = f"error: {str(e)}"
 
     return jsonify({
-        "status": "healthy", 
+        "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "database": db_status,
         "cache": redis_status
@@ -283,9 +252,7 @@ def internal_error(error):
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
-    # This block creates the database tables if they don't exist
     with app.app_context():
         db.create_all()
-        print("Database tables created.")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

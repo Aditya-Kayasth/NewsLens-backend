@@ -9,8 +9,9 @@ beautifulsoup4==4.12.2
 lxml
 textblob==0.17.1
 nltk==3.8.1
-Flask-SQLAlchemy==3.1.1  
-psycopg2-binary==2.9.9     
-redis==5.0.1               
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+redis==5.0.1
 numpy==1.26.4
 scikit-learn==1.5.0
+google-generativeai==0.8.3
