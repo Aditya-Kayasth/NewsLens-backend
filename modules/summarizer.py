@@ -59,7 +59,7 @@ Articles:
 {all_text}"""
 
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content(prompt)
         summary = response.text
     except Exception as e:
