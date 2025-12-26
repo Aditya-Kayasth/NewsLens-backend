@@ -177,6 +177,30 @@ def fetch_news():
     except Exception as e:
         return jsonify({"error": f"Error fetching news: {str(e)}"}), 500
 
+@app.route("/top-headlines", methods=["POST", "OPTIONS"])
+def fetch_top_headlines():
+    if request.method == "OPTIONS":
+        return jsonify({"message": "CORS preflight"}), 200
+    
+    data = request.get_json()
+    page = data.get("page", 1)
+    
+    params = {'country': 'us', 'page': page, 'pageSize': 20, 'apiKey': NEWSAPI_KEY}
+    
+    try:
+        api_response = top_headlines(params)
+        if api_response.get('status') != 'ok':
+            return jsonify({"error": "Failed to fetch top headlines", "details": api_response.get('message', 'Unknown')}), 500
+        
+        api_response = fetch_full_content(api_response)
+        api_response = analyze_sentiments(api_response)
+        api_response['articles'] = [a for a in api_response.get('articles', []) if a.get('content') and a.get('urlToImage')]
+        
+        return jsonify({"articles": api_response.get('articles', []), "totalResults": api_response.get('totalResults', 0), "page": page}), 200
+    
+    except Exception as e:
+        return jsonify({"error": f"Error fetching top headlines: {str(e)}"}), 500
+
 @app.route("/search", methods=["POST", "OPTIONS"])
 def search():
     if request.method == "OPTIONS":
