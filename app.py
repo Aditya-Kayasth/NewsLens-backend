@@ -156,8 +156,8 @@ def fetch_news():
             return jsonify({"error": "User not found"}), 404
         
         topics = user.preferred_domains
-        if not topics:
-            return jsonify({"error": "Please select topics in preferences"}), 400
+        if not topics or len(topics) == 0:
+            return jsonify({"articles": [], "totalResults": 0, "page": page}), 200
         query = ' OR '.join(topics)
 
     from_date = (datetime.utcnow() - timedelta(days=3)).strftime('%Y-%m-%d')
